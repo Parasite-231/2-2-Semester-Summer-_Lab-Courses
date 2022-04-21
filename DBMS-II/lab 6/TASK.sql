@@ -1,0 +1,48 @@
+TASK 01:
+
+CREATE OR REPLACE FUNCTION id_gen(B_CODE,ACC_TYPE,C_ID)
+RETURN NUMBER 
+IS
+account_type NUMBER;
+customer_id NUMBER;
+dob DATE;
+c_dob VARCHAR2(225);
+acc_id NUMBER := 0 ;
+new_id NUMBER := 0;
+generated_id NUMBER := 0;
+
+SELECT DOB INTO dob FROM CUSTOMERS WHERE CUSTOMER_ID = C_ID;
+SELECT TO_CHAR(dob,'YYYYMMDD') into c_dob FROM DUAL;
+SELECT ACCOUNT_TYPE INTO account_type FROM ACCOUNTS WHERE CUSTOMER_ID = C_ID;
+SELECT MAX(ACCOUNT_ID) INTO acc_id FROM ACCOUNTS;
+
+IF ACC_TYPE = 'Saving'
+account_type := 10;
+ELSIF ACC_TYPE = 'Current'
+account_type := 11;
+ENDIF;
+
+IF(acc_id > 0) --IF TABLE CONTAINS OLD ACCOUNT IDs
+RETURN acc_id + 1;
+ELSE 
+new_id := TO_NUMBER(TO_CHAR(acc_type,'TT')||TO_CHAR(B_CODE,'BBB')||TO_CHAR(c_dob)||TO_CHAR(C_ID));
+ENDIF;
+
+SELECT CONVERT( numeric(13,6), new_id) INTO generated_id FROM DUAL; --FOR DECIMAL POINT TTBBBYYYYMMDD.XXXXXX
+RETURN generated_id;
+END;
+/
+
+TASK 02:
+CREATE OR REPLACE TRIGGER generate_id
+BEFORE INSERT ON ACCOUNTS
+FOR EACH ROW
+BEGIN 
+SELECT REG_BRANCH INTO B_ID FROM CUSTOMERS WHERE CUSTOMER_ID = C_ID;
+:NEW.Account_id := id_gen(:NEW.B_ID, :NEW.Account_type, :NEW.Customer_id);
+END generate_id;
+/
+
+
+
+
